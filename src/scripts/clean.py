@@ -40,19 +40,27 @@ def extract_data(file_path):
     return ds
 
 def filter(ds):
-    lat_max, lat_min = 41.5, 38 
-    lon_min, lon_max = -81, -73
+    lat_max, lat_min = 43.125, 36.375 
+    lon_min, lon_max = -81.125, -72.875 
     filtered_data = ds.sel(lat=slice(lat_min, lat_max), lon=slice(lon_min, lon_max))
     return filtered_data
 
 def main():
-    # ***change variable below
-    #base_dir = "/home/ellab/air_pollution/src/data/new_no2" # this is where the new filtered files will go NO2
-    base_dir = "/home/ellab/air_pollution/src/data/new_o3" # O3
-    for year in range(2006, 2025):  # inclusive of 2024
-        year_dir = os.path.join(base_dir, str(year))
+    # ***change variables below
+    #input_base_dir = "/home/ellab/air_pollution/src/data/new_no2" # input directory for NO2
+    input_base_dir = "/home/ellab/air_pollution/src/data/new_o3" # O3
+
+    #output_base_dir = "/home/ellab/air_pollution/src/data/clean_no2" # output directory for NO2
+    output_base_dir = "/home/ellab/air_pollution/src/data/clean_o3" # O3
+
+    for year in range(2005,2025):  # inclusive of 2024 for (2005, 2025)
+        year_dir = os.path.join(input_base_dir, str(year))
         if not os.path.isdir(year_dir):
             continue  # skip if year folder doesn't exist
+
+        # create matching year folder in output
+        output_year_dir = os.path.join(output_base_dir, str(year))
+        os.makedirs(output_year_dir, exist_ok=True)
 
         for filename in os.listdir(year_dir):
             if filename.endswith(".he5"):
@@ -63,7 +71,7 @@ def main():
 
                     # Output filename
                     output_filename = filename.replace(".he5", "_clean.nc")
-                    output_path = os.path.join(year_dir, output_filename)
+                    output_path = os.path.join(output_year_dir, output_filename)
 
                     # Save filtered dataset
                     filtered_no2.to_netcdf(output_path)
