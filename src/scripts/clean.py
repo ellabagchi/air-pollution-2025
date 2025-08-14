@@ -11,8 +11,11 @@ def extract_data(file_path):
     with h5py.File(file_path, 'r') as f: # read the hdf5 file
         # ***change variable below
         #data_path = '/HDFEOS/GRIDS/ColumnAmountNO2/Data Fields/ColumnAmountNO2TropCloudScreened' # uncomment for NO2
-        data_path = '/HDFEOS/GRIDS/ColumnAmountO3/Data Fields/ColumnAmountO3' # for O3
-        data = f[data_path][()].copy()
+        #data_path = '/HDFEOS/GRIDS/ColumnAmountO3/Data Fields/ColumnAmountO3' # for O3
+        #data = f[data_path][()].copy() # for no2 and o3
+
+        data_path = '/HDFEOS/GRIDS/OMI Total Column Amount HCHO/Data Fields/ColumnAmountHCHO' # for HCHO
+        data = f[data_path][0].copy() # for hcho -- hopefully takes the first step/array in col. amt. HCHO
 
         # below-- reconstruct lat/lon grid because I couldn't access the lat/lon in original file
         n_lat, n_lon = data.shape 
@@ -29,7 +32,7 @@ def extract_data(file_path):
 
     ds = xr.Dataset( # create a new ds for the data
         {
-            'O3': (['lat', 'lon'], data) # ***change variable here 
+            'HCHO': (['lat', 'lon'], data) # ***change variable here 
         },
         coords={
             'lat': lat,
@@ -48,13 +51,15 @@ def filter(ds):
 def main():
     # ***change variables below
     #input_base_dir = "/home/ellab/air_pollution/src/data/new_no2" # input directory for NO2
-    input_base_dir = "/home/ellab/air_pollution/src/data/new_o3" # O3
+    #input_base_dir = "/home/ellab/air_pollution/src/data/new_o3" # O3
+    input_base_dir = "/home/ellab/air_pollution/src/data/new_hcho" # HCHO
 
     #output_base_dir = "/home/ellab/air_pollution/src/data/clean_no2" # output directory for NO2
-    output_base_dir = "/home/ellab/air_pollution/src/data/clean_o3" # O3
+    #output_base_dir = "/home/ellab/air_pollution/src/data/clean_o3" # O3
+    output_base_dir = "/home/ellab/air_pollution/src/data/clean_hcho" # HCHO
 
-    for year in range(2005,2025):  # inclusive of 2024 for (2005, 2025)
-        year_dir = os.path.join(input_base_dir, str(year))
+    for year in range(2005,2006):  # inclusive of 2024 for (2005, 2025)
+        year_dir = os.path.join(input_base_dir, str(year)) 
         if not os.path.isdir(year_dir):
             continue  # skip if year folder doesn't exist
 
@@ -72,7 +77,6 @@ def main():
                     # Output filename
                     output_filename = filename.replace(".he5", "_clean.nc")
                     output_path = os.path.join(output_year_dir, output_filename)
-
                     # Save filtered dataset
                     filtered_no2.to_netcdf(output_path)
                     print(f"Saved: {output_path}")
