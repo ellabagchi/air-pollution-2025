@@ -1,6 +1,6 @@
 #!/bin/bash
 # this code works for downloading daily data 1 year at a time-- change the year as needed, change variable (NO2, O3, HCHO) as needed
-for year in 2013; do
+for year in 2024; do
 
 
     # base_url="https://acdisc.gesdisc.eosdis.nasa.gov/data/Aura_OMI_Level3/OMNO2d.003/${year}" # uncomment for NO2-- change all variables accordingly
