@@ -23,7 +23,7 @@ def extract_data(file_path):
     # --- Build 0.05° global lat/lon grid ---
     n_lat, n_lon = data.shape
     res = 0.05
-    latitudes = np.linspace(-90 + res / 2, 90 - res / 2, n_lat)
+    latitudes = np.linspace(-90 + res / 2, 90 - res / 2, n_lat)   # this is where you extract actual lat/lon
     longitudes = np.linspace(-180 + res / 2, 180 - res / 2, n_lon)
 
     sd.end()
@@ -47,8 +47,8 @@ def main():
     output_base_dir = "/home/ellab/air_pollution/src/data/clean_aod"
 
     # --- years to process ---
-    START_YEAR = 2005
-    END_YEAR   = 2005  # change to 2024, etc.
+    START_YEAR = 2006
+    END_YEAR   = 2016  # change to 2024, etc.
 
     for year in range(START_YEAR, END_YEAR + 1):
         year_dir = os.path.join(input_base_dir, str(year))
