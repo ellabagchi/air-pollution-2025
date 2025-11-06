@@ -72,8 +72,8 @@ def extract_data(file_path):
     # --- build lat/lon axes (0.05° global grid) ---
     line_indices   = np.arange(nlines)
     sample_indices = np.arange(nsamples)
-    latitudes  = 90.0  - line_indices * 0.05      # 90 -> -90
-    longitudes = -180.0 + sample_indices * 0.05   # -180 -> 180
+    latitudes  = 90.0  - line_indices * 0.05      # 90 -> -90 (DESCENDING)
+    longitudes = -180.0 + sample_indices * 0.05   # -180 -> 180 (ASCENDING)
 
     sd.end()
 
@@ -90,14 +90,18 @@ def extract_data(file_path):
     ds["lat"].attrs.update({"long_name": "latitude", "units": "degrees_north"})
     ds["lon"].attrs.update({"long_name": "longitude", "units": "degrees_east"})
     
-
     return ds
 
 def filter_region(ds):
     """Subset to region of interest (gridded)."""
     lat_max, lat_min = 43.150, 36.350
     lon_min, lon_max = -83.150, -70.100
-    return ds.sel(lat=slice(lat_min, lat_max), lon=slice(lon_min, lon_max))
+
+    # lat is descending, so slice(lat_max, lat_min)
+    return ds.sel(
+        lat=slice(lat_max, lat_min),
+        lon=slice(lon_min, lon_max)
+    )
 
 def add_points_from_region(ds_reg):
     """
@@ -155,8 +159,8 @@ def main():
     output_base_dir = "/home/ellab/air_pollution/src/data/clean_aod"
 
     # --- years to process ---
-    START_YEAR = 2008
-    END_YEAR   = 2008
+    START_YEAR = 2007
+    END_YEAR   = 2007
 
     for year in range(START_YEAR, END_YEAR + 1):
         year_dir = os.path.join(input_base_dir, str(year))
@@ -174,12 +178,19 @@ def main():
             try:
                 ds_global = extract_data(file_path)      # global compact AOD
                 ds_reg    = filter_region(ds_global)     # regional gridded
+                print(year, filename, float(ds_reg["AOD_055_compact"].count())) ############ DELETE LATER
                 ds_out    = add_points_from_region(ds_reg)  # add points
 
                 output_filename = filename.replace(".hdf", "_clean.nc")
                 output_path = os.path.join(out_year_dir, output_filename)
 
-                ds_out.to_netcdf(output_path)
+                # compress all data variables
+                encoding = {
+                    var: {"zlib": True, "complevel": 4}
+                    for var in ds_out.data_vars
+                }
+
+                ds_out.to_netcdf(output_path, encoding=encoding)
                 print(f"Saved: {output_path}")
 
             except Exception as e:
