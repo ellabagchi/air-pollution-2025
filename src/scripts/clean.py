@@ -1,4 +1,4 @@
-# this script cleans the OMI NO2, OMI O3, or HCHO data(2005-2024)
+# this script cleans the OMI NO2, OMI O3, or HCHO data(2005-2024) ---- ONLY USE THIS FOR NO2!!!!!!!!!!!!!!!!!!
 # 1. extracts CloudScreenedTropNO2/ColumnAmountO3/ColumnAmountHCHO data and creates new lat/lon grid
 # 2. filters lat and lon to my desired region
 # 3. saves this cleaned data as a netCDF
@@ -8,17 +8,27 @@ import xarray as xr
 import os
 
 def extract_data(file_path):
-    with h5py.File(file_path, 'r') as f: # read the hdf5 file
-        # ***change variable below
-        data_path = '/HDFEOS/GRIDS/ColumnAmountNO2/Data Fields/ColumnAmountNO2TropCloudScreened' # uncomment for NO2
-        #data_path = '/HDFEOS/GRIDS/ColumnAmountO3/Data Fields/ColumnAmountO3' # for O3
-        #data = f[data_path][()].copy() # for no2 and o3
+    with h5py.File(file_path, 'r') as f:  # read the hdf5 file
+        data_path = '/HDFEOS/GRIDS/OMI Total Column Amount HCHO/Data Fields/ColumnAmountHCHO'
+        dset = f[data_path]
 
-        #data_path = '/HDFEOS/GRIDS/OMI Total Column Amount HCHO/Data Fields/ColumnAmountHCHO' # for HCHO
-        data = f[data_path][()].copy() # for hcho -- hopefully takes the first step/array in col. amt. HCHO
+        # Just take the first step (assumes shape is (n_step, n_lat, n_lon))
+        data = dset[0, :, :].astype("float32")  # make sure it's float so it can hold NaNs
+
+        # ---- handle NaNs / fill values ----
+        # Try the most common attribute names:
+        fill_value = None
+        for key in ["_FillValue", "MissingValue", "missing_value"]:
+            if key in dset.attrs:
+                fill_value = dset.attrs[key]
+                break
+
+        if fill_value is not None:
+            # Replace fill values with NaN
+            data = np.where(data == fill_value, np.nan, data)
 
         # below-- reconstruct lat/lon grid because I couldn't access the lat/lon in original file
-        n_lat, n_lon = data.shape 
+        n_lat, n_lon = data.shape
         lat_start = -90 + 0.25 / 2
         lat_end = 90 - 0.25 / 2
         lon_start = -180 + 0.25 / 2
@@ -30,17 +40,18 @@ def extract_data(file_path):
         lat = latitudes
         lon = longitudes
 
-    ds = xr.Dataset( # create a new ds for the data
+    ds = xr.Dataset(
         {
-            'NO2': (['lat', 'lon'], data) # ***change variable here 
+            "HCHO": (["lat", "lon"], data)
         },
         coords={
-            'lat': lat,
-            'lon': lon
+            "lat": lat,
+            "lon": lon
         }
     )
 
     return ds
+
 
 def filter(ds):
     lat_max, lat_min = 43.125, 36.375 
@@ -50,13 +61,13 @@ def filter(ds):
 
 def main():
     # ***change variables below
-    input_base_dir = "/home/ellab/air_pollution/src/data/new_no2" # input directory for NO2
+    #input_base_dir = "/home/ellab/air_pollution/src/data/new_no2" # input directory for NO2
     #input_base_dir = "/home/ellab/air_pollution/src/data/new_o3" # O3
-    #input_base_dir = "/home/ellab/air_pollution/src/data/new_hcho" # HCHO
+    input_base_dir = "/home/ellab/air_pollution/src/data/new_hcho" # HCHO
 
-    output_base_dir = "/home/ellab/air_pollution/src/data/clean_no2" # output directory for NO2
+    #output_base_dir = "/home/ellab/air_pollution/src/data/clean_no2" # output directory for NO2
     #output_base_dir = "/home/ellab/air_pollution/src/data/clean_o3" # O3
-    #output_base_dir = "/home/ellab/air_pollution/src/data/clean_hcho" # HCHO
+    output_base_dir = "/home/ellab/air_pollution/src/data/clean_hcho" # HCHO
 
     for year in range(2005,2025):  # inclusive of 2024 for (2005, 2025)
         year_dir = os.path.join(input_base_dir, str(year)) 

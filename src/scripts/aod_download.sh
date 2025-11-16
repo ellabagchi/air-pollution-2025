@@ -30,7 +30,7 @@ set -uo pipefail   # (intentionally NOT using -e so one failed year/day won't st
 : "${LAADS_TOKEN:?Set LAADS_TOKEN env var with your Earthdata LAADS token, e.g. export LAADS_TOKEN='...'}"
 
 # ---- change these as needed ----
-YEAR_START=2014
+YEAR_START=2017
 YEAR_END=2024            # e.g., 2024
 BASE_SAVE="/home/ellab/air_pollution/src/data/new_aod"
 OUT_STUB="maiac_aod"

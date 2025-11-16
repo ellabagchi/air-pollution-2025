@@ -1,3 +1,5 @@
+# updated-- use this to clean AOD
+
 import os
 import numpy as np
 import xarray as xr
@@ -159,8 +161,8 @@ def main():
     output_base_dir = "/home/ellab/air_pollution/src/data/clean_aod"
 
     # --- years to process ---
-    START_YEAR = 2007
-    END_YEAR   = 2007
+    START_YEAR = 2017
+    END_YEAR   = 2024
 
     for year in range(START_YEAR, END_YEAR + 1):
         year_dir = os.path.join(input_base_dir, str(year))
@@ -174,15 +176,20 @@ def main():
         for filename in sorted(os.listdir(year_dir)):
             if not filename.lower().endswith(".hdf"):
                 continue
+
             file_path = os.path.join(year_dir, filename)
+            output_filename = filename.replace(".hdf", "_clean.nc")
+            output_path = os.path.join(out_year_dir, output_filename)
+
+            # ✅ Skip if this file has already been processed
+            if os.path.exists(output_path):
+                print(f"Skipping already processed file: {output_path}")
+                continue
+
             try:
                 ds_global = extract_data(file_path)      # global compact AOD
                 ds_reg    = filter_region(ds_global)     # regional gridded
-                print(year, filename, float(ds_reg["AOD_055_compact"].count())) ############ DELETE LATER
                 ds_out    = add_points_from_region(ds_reg)  # add points
-
-                output_filename = filename.replace(".hdf", "_clean.nc")
-                output_path = os.path.join(out_year_dir, output_filename)
 
                 # compress all data variables
                 encoding = {
